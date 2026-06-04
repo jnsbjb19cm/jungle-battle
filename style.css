@@ -1,45 +1,274 @@
-.cell {
+body {
+    margin: 0;
+    padding: 0;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: 'Microsoft YaHei', system-ui, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 顶部资源 + 手牌栏 */
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1e2937;
+    padding: 8px 16px;
+    border-bottom: 2px solid #334155;
+    flex-shrink: 0;
+    gap: 16px;
+}
+
+.resources {
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.resource {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 18px;
+    font-weight: 700;
     background: #334155;
-    border: 2px solid #64748b;
+    padding: 4px 12px;
     border-radius: 8px;
+}
+
+.resource .max {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-left: 2px;
+}
+
+.hand-bar {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    padding: 4px 0;
+}
+
+.hand-cards {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+}
+
+.card {
+    width: 78px;
+    height: 98px;
+    background: #1e2937;
+    border: 2px solid #64748b;
+    border-radius: 10px;
+    padding: 6px 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    border-color: #eab308;
+}
+
+.card.selected {
+    border-color: #eab308;
+    box-shadow: 0 0 0 3px #eab30855;
+}
+
+.base-hp {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.hp-item {
+    background: #334155;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.hp-item.player {
+    border: 2px solid #4ade80;
+}
+
+.hp-item.enemy {
+    border: 2px solid #f87171;
+}
+
+/* 主要内容区 */
+.main-container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* 左右侧装饰 */
+.side {
+    width: 110px;
+    background: #1e2937;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.15s;
     position: relative;
-    overflow: visible;
 }
 
-.floating-text {
-    position: absolute;
-    top: 15%;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 11px;
+.left-side {
+    border-right: 3px solid #334155;
+}
+
+.right-side {
+    border-left: 3px solid #334155;
+    flex-direction: column;
+    padding: 12px 8px;
+    gap: 12px;
+}
+
+.side-decoration {
+    text-align: center;
+}
+
+.side-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 8px;
+}
+
+/* 战场区域 */
+.battlefield-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: #166534;
+    min-width: 0;
+}
+
+.battlefield {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(42px, 52px));
+    grid-template-rows: repeat(5, minmax(50px, 60px));
+    gap: 4px;
+    background: #14532d;
+    padding: 10px;
+    border-radius: 12px;
+    border: 4px solid #4ade80;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+.cell {
+    background: #166534;
+    border: 1.5px solid #4ade80;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.1s;
+    position: relative;
+}
+
+.cell:hover {
+    background: #4ade80;
+    opacity: 0.15;
+}
+
+.cell.player-side {
+    background: #14532d;
+}
+
+.cell.enemy-side {
+    background: #4c1d1d;
+}
+
+/* 日志区 */
+.log-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.log-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 6px;
+    padding-left: 4px;
+}
+
+.log {
+    flex: 1;
+    background: #0f172a;
+    border-radius: 8px;
+    padding: 10px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid #334155;
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+button {
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+button.danger {
+    background: #7f1d1d;
+    color: white;
+}
+
+/* 单位样式 */
+.unit {
+    width: 92%;
+    height: 92%;
+    margin: auto;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
     font-weight: 700;
-    pointer-events: none;
-    z-index: 10;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-    white-space: nowrap;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
 }
 
-.floating-text.damage {
-    color: #f87171;
+.hp-bar {
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
+    height: 4px;
+    background: #22c55e;
+    border-radius: 2px;
 }
 
-.floating-text.heal {
-    color: #4ade80;
-}
-
-@keyframes float-up {
-    0% {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
-    100% {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-25px);
+/* 响应式调整 */
+@media (max-height: 700px) {
+    .battlefield {
+        grid-template-columns: repeat(12, minmax(36px, 46px));
+        grid-template-rows: repeat(5, minmax(44px, 52px));
+        gap: 3px;
+        padding: 8px;
     }
 }

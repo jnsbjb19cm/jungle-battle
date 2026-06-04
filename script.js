@@ -1,5 +1,5 @@
-// 丛林保卫战 v0.6
-// 新增尖刺藤蔓 + 狂暴野猪 + 卡牌数据库独立文件
+// 丛林保卫战 v0.7
+// 冰块冷莹机完整特殊效果（多目标 + 减速 + 冰封）
 
 let sunlight = 5;
 let food = 5;
@@ -72,11 +72,22 @@ function updateUnitDisplay(unit) {
     let extra = '';
     if (unit.special === 'thorns') extra = '<br><small style="color:#4ade80">荆棓</small>';
     if (unit.special === 'knockback') extra = '<br><small style="color:#f59e0b">击退</small>';
+    if (unit.special === 'ice') extra = '<br><small style="color:#67e8f9">冰控</small>';
+
+    // 状态显示
+    let statusText = '';
+    const now = Date.now();
+    if (unit.freezeUntil && unit.freezeUntil > now) {
+        statusText = '<br><small style="color:#bae6fd; font-weight:700;">[冰封]</small>';
+    } else if (unit.slowUntil && unit.slowUntil > now) {
+        statusText = '<br><small style="color:#bae6fd;">减速</small>';
+    }
 
     unitEl.innerHTML = `
         ${unit.name}<br>
         <small>HP ${Math.floor(unit.currentHP)}</small>
         ${extra}
+        ${statusText}
         <div class="hp-bar" style="width:${hpPercent}%;"></div>
     `;
     unitEl.style.background = unit.color;
@@ -97,7 +108,11 @@ function placeCard(row, col, cellElement) {
         ...cardData,
         row, col,
         currentHP: cardData.hp,
-        lastActionTime: Date.now()
+        lastActionTime: Date.now(),
+        // debuff
+        slowUntil: 0,
+        freezeUntil: 0,
+        freezeImmuneUntil: 0
     };
 
     sunlight -= cardData.cost.sunlight || 0;
@@ -127,66 +142,72 @@ function addLog(msg) {
     const p = document.createElement('p');
     p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
     logContent.appendChild(p);
-    if (logContent.children.length > 16) logContent.removeChild(logContent.children[0]);
+    if (logContent.children.length > 18) logContent.removeChild(logContent.children[0]);
     logContent.scrollTop = logContent.scrollHeight;
 }
 
-// 尖刺藤蔓 - 荆棓光环伤害
-function processThorns(unit) {
-    if (unit.special !== 'thorns' || unit.currentHP <= 0) return;
+// 冰块冷莹机完整特殊效果
+function processIceSpecial(unit) {
+    if (unit.special !== 'ice' || unit.currentHP <= 0) return;
 
-    let damaged = 0;
-    const directions = [
-        [-1,0],[1,0],[0,-1],[0,1],
-        [-1,-1],[-1,1],[1,-1],[1,1]
-    ];
+    const now = Date.now();
+    const enemies = units.filter(u => 
+        u.owner !== unit.owner && 
+        u.currentHP > 0 &&
+        (!u.freezeUntil || u.freezeUntil < now)
+    );
 
-    directions.forEach(([dr, dc]) => {
-        const tr = unit.row + dr;
-        const tc = unit.col + dc;
-        if (tr < 0 || tr >= 5 || tc < 0 || tc >= 12) return;
+    if (enemies.length === 0) return;
 
-        const target = grid[tr] && grid[tr][tc];
-        if (target && target.owner !== unit.owner && target.currentHP > 0) {
-            const dmg = 4;
-            target.currentHP -= dmg;
-            damaged++;
-            updateUnitDisplay(target);
+    // 随机选择最多 8 个目标
+    const shuffled = [...enemies].sort(() => Math.random() - 0.5);
+    const targets = shuffled.slice(0, Math.min(8, shuffled.length));
 
-            if (target.currentHP <= 0) {
-                removeUnit(target);
-                addLog(`${target.name} 被荆棓杀死`);
+    let hitCount = 0;
+
+    targets.forEach(target => {
+        if (target.currentHP <= 0) return;
+
+        // 伤害计算
+        let dmg = unit.attack;
+        // 假设远程单位伤害减半（简化处理）
+        if (target.range && target.range >= 2) dmg = Math.floor(dmg * 0.5);
+
+        target.currentHP -= dmg;
+        hitCount++;
+
+        updateUnitDisplay(target);
+
+        // 减速 / 冰封逻辑
+        const isFrozen = target.freezeUntil && target.freezeUntil > now;
+        const isSlowed = target.slowUntil && target.slowUntil > now;
+
+        if (isFrozen) {
+            // 已冰封中不再处理
+        } else if (isSlowed) {
+            // 已减速 → 转冰封
+            if (!target.freezeImmuneUntil || target.freezeImmuneUntil < now) {
+                target.freezeUntil = now + 1000; // 冰封 1 秒
+                target.freezeImmuneUntil = now + 3000; // 冰封后免疫 2 秒
+                addLog(`${target.name} 被冰封了`);
             }
+        } else {
+            // 普通状态 → 50%减速
+            if (Math.random() < 0.5) {
+                target.slowUntil = now + 1500; // 减速 1.5 秒
+                addLog(`${target.name} 被减速了`);
+            }
+        }
+
+        if (target.currentHP <= 0) {
+            removeUnit(target);
+            addLog(`${target.name} 被冰块冷莹机击败`);
         }
     });
 
-    if (damaged > 0) {
-        addLog(`${unit.name} 造成荆棓伤害`);
+    if (hitCount > 0) {
+        addLog(`${unit.name} 随机攻击了 ${hitCount} 个目标`);
     }
-}
-
-// 狂暴野猪 - 击退效果
-function tryKnockback(attacker, target) {
-    if (attacker.special !== 'knockback') return;
-    if (Math.random() > 0.35) return; // 35%概率击退
-
-    const direction = attacker.owner === 'player' ? 1 : -1;
-    const pushDirection = -direction; // 向反方向击退
-    const newCol = target.col + pushDirection;
-
-    if (newCol < 0 || newCol >= 12) return;
-    if (isCellOccupied(target.row, newCol)) return;
-
-    // 移动目标
-    const oldCell = document.querySelector(`.cell[data-row="${target.row}"][data-col="${target.col}"]`);
-    if (oldCell) oldCell.innerHTML = '';
-
-    grid[target.row][target.col] = null;
-    target.col = newCol;
-    grid[target.row][newCol] = target;
-
-    updateUnitDisplay(target);
-    addLog(`${attacker.name} 击退了 ${target.name}`);
 }
 
 function performAttack(attacker, target) {
@@ -208,7 +229,9 @@ function performAttack(attacker, target) {
     updateUnitDisplay(target);
 
     // 狂暴野猪 击退
-    tryKnockback(attacker, target);
+    if (attacker.special === 'knockback') {
+        tryKnockback(attacker, target);
+    }
 
     if (target.currentHP <= 0) {
         removeUnit(target);
@@ -224,7 +247,9 @@ function removeUnit(unit) {
 }
 
 function tryMove(unit) {
+    const now = Date.now();
     if (!unit.canMove || unit.currentHP <= 0) return;
+    if (unit.freezeUntil && unit.freezeUntil > now) return; // 冰封中不能移动
 
     const direction = unit.owner === 'player' ? 1 : -1;
     const nextCol = unit.col + direction;
@@ -253,6 +278,8 @@ function tryMove(unit) {
 function processSpecialAbilities() {
     specialTick++;
 
+    const now = Date.now();
+
     units.forEach(unit => {
         if (!unit || unit.currentHP <= 0) return;
 
@@ -272,7 +299,7 @@ function processSpecialAbilities() {
             }
         }
 
-        // 尖刺藤蔓 - 荆棓光环
+        // 尖刺藤蔓
         if (unit.special === 'thorns' && specialTick % 2 === 0) {
             processThorns(unit);
         }
@@ -295,7 +322,10 @@ function spawnEnemyWave() {
                     ...cardDatabase['giant-monster'],
                     row, col,
                     currentHP: cardDatabase['giant-monster'].hp,
-                    lastActionTime: now
+                    lastActionTime: now,
+                    slowUntil: 0,
+                    freezeUntil: 0,
+                    freezeImmuneUntil: 0
                 };
                 grid[row][col] = m;
                 units.push(m);
@@ -328,9 +358,16 @@ function gameLoop() {
     spawnEnemyWave();
     processSpecialAbilities();
 
+    const now = Date.now();
+
     for (let i = units.length - 1; i >= 0; i--) {
         const u = units[i];
         if (!u || u.currentHP <= 0) continue;
+
+        // 冰封中不能行动
+        if (u.freezeUntil && u.freezeUntil > now) {
+            continue;
+        }
 
         if (u.special === 'ice') {
             processIceSpecial(u);
@@ -370,31 +407,52 @@ function findTarget(unit) {
     return null;
 }
 
-function processIceSpecial(unit) {
-    if (unit.special !== 'ice' || unit.currentHP <= 0) return;
+function processThorns(unit) {
+    if (unit.special !== 'thorns' || unit.currentHP <= 0) return;
 
-    const enemies = units.filter(u => u.owner !== unit.owner && u.currentHP > 0);
-    if (enemies.length === 0) return;
+    let damaged = 0;
+    const directions = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
 
-    const shuffled = [...enemies].sort(() => Math.random() - 0.5);
-    const targets = shuffled.slice(0, Math.min(6, shuffled.length));
+    directions.forEach(([dr, dc]) => {
+        const tr = unit.row + dr;
+        const tc = unit.col + dc;
+        if (tr < 0 || tr >= 5 || tc < 0 || tc >= 12) return;
 
-    let hitCount = 0;
-    targets.forEach(target => {
-        if (target.currentHP > 0) {
-            const dmg = Math.floor(unit.attack * (0.7 + Math.random() * 0.6));
-            target.currentHP -= dmg;
-            hitCount++;
+        const target = grid[tr] && grid[tr][tc];
+        if (target && target.owner !== unit.owner && target.currentHP > 0) {
+            target.currentHP -= 4;
+            damaged++;
             updateUnitDisplay(target);
-
             if (target.currentHP <= 0) {
                 removeUnit(target);
-                addLog(`${target.name} 被冰块冷莹机击败`);
+                addLog(`${target.name} 被荆棓杀死`);
             }
         }
     });
 
-    if (hitCount > 0) addLog(`${unit.name} 随机攻击了 ${hitCount} 个目标`);
+    if (damaged > 0) addLog(`${unit.name} 造成荆棓伤害`);
+}
+
+function tryKnockback(attacker, target) {
+    if (attacker.special !== 'knockback') return;
+    if (Math.random() > 0.35) return;
+
+    const direction = attacker.owner === 'player' ? 1 : -1;
+    const pushDirection = -direction;
+    const newCol = target.col + pushDirection;
+
+    if (newCol < 0 || newCol >= 12) return;
+    if (isCellOccupied(target.row, newCol)) return;
+
+    const oldCell = document.querySelector(`.cell[data-row="${target.row}"][data-col="${target.col}"]`);
+    if (oldCell) oldCell.innerHTML = '';
+
+    grid[target.row][target.col] = null;
+    target.col = newCol;
+    grid[target.row][newCol] = target;
+
+    updateUnitDisplay(target);
+    addLog(`${attacker.name} 击退了 ${target.name}`);
 }
 
 function initGrid() {
@@ -434,8 +492,8 @@ function initGame() {
 
     setInterval(gameLoop, 750);
 
-    addLog('v0.6 已加载');
-    addLog('新增：尖刺藤蔓、狂暴野猪');
+    addLog('v0.7 已加载');
+    addLog('冰块冷莹机已完整减速/冰封系统');
 }
 
 let cardCooldowns = {};

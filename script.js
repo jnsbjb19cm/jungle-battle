@@ -1,22 +1,6 @@
 // 丛林保卫战 v0.8
 // 添加小型浮动战斗文字（伤害/治疗数字）
 
-function showFloatingText(row, col, value, isHeal = false) {
-    const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
-    if (!cell) return;
-
-    const text = document.createElement('div');
-    text.className = `floating-text ${isHeal ? 'heal' : 'damage'}`;
-    text.textContent = isHeal ? `+${value}` : `-${value}`;
-
-    cell.appendChild(text);
-
-    // 动画结束后移除
-    setTimeout(() => {
-        if (text.parentNode) text.parentNode.removeChild(text);
-    }, 650);
-}
-
 let sunlight = 5;
 let food = 5;
 let playerBaseHP = 1000;
@@ -28,6 +12,40 @@ let grid = [];
 let units = [];
 let lastSpawnTime = 0;
 let specialTick = 0;
+
+function showFloatingText(row, col, text, color = '#ef4444') {
+    const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+    if (!cell) return;
+
+    const floatDiv = document.createElement('div');
+    floatDiv.textContent = text;
+    floatDiv.style.cssText = `
+        position: absolute;
+        left: 50%;
+        top: -2px;
+        transform: translateX(-50%);
+        color: ${color};
+        font-size: 10px;
+        font-weight: 700;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+        pointer-events: none;
+        z-index: 200;
+        white-space: nowrap;
+        transition: all 0.55s cubic-bezier(0.4, 0, 1, 1);
+    `;
+
+    cell.appendChild(floatDiv);
+
+    // 向上飘 + 渐变
+    requestAnimationFrame(() => {
+        floatDiv.style.transform = 'translate(-50%, -22px)';
+        floatDiv.style.opacity = '0';
+    });
+
+    setTimeout(() => {
+        floatDiv.remove();
+    }, 580);
+}
 
 function initHand() {
     const handContainer = document.getElementById('hand-cards');
@@ -160,15 +178,6 @@ function addLog(msg) {
     logContent.scrollTop = logContent.scrollHeight;
 }
 
-// 显示浮动文字
-function showDamage(row, col, amount) {
-    showFloatingText(row, col, amount, false);
-}
-
-function showHeal(row, col, amount) {
-    showFloatingText(row, col, amount, true);
-}
-
 // 冰块冷莹机完整特殊效果
 function processIceSpecial(unit) {
     if (unit.special !== 'ice' || unit.currentHP <= 0) return;
@@ -196,21 +205,23 @@ function processIceSpecial(unit) {
         target.currentHP -= dmg;
         hitCount++;
 
-        showDamage(target.row, target.col, dmg);
+        showFloatingText(target.row, target.col, `-${dmg}`, '#ef4444');
         updateUnitDisplay(target);
 
         const isFrozen = target.freezeUntil && target.freezeUntil > now;
         const isSlowed = target.slowUntil && target.slowUntil > now;
 
-        if (!isFrozen && !isSlowed) {
+        if (!isFrozen && isSlowed) {
+            if (!target.freezeImmuneUntil || target.freezeImmuneUntil < now) {
+                target.freezeUntil = now + 1000;
+                target.freezeImmuneUntil = now + 3000;
+                addLog(`${target.name} 被冰封了`);
+            }
+        } else if (!isFrozen && !isSlowed) {
             if (Math.random() < 0.5) {
                 target.slowUntil = now + 1500;
                 addLog(`${target.name} 被减速了`);
             }
-        } else if (isSlowed && (!target.freezeImmuneUntil || target.freezeImmuneUntil < now)) {
-            target.freezeUntil = now + 1000;
-            target.freezeImmuneUntil = now + 3000;
-            addLog(`${target.name} 被冰封了`);
         }
 
         if (target.currentHP <= 0) {
@@ -230,7 +241,7 @@ function performAttack(attacker, target) {
     const damage = attacker.attack;
     target.currentHP -= damage;
 
-    showDamage(target.row, target.col, damage);
+    showFloatingText(target.row, target.col, `-${damage}`, '#ef4444');
 
     const cell = document.querySelector(`.cell[data-row="${attacker.row}"][data-col="${attacker.col}"]`);
     if (cell) {
@@ -308,7 +319,7 @@ function processSpecialAbilities() {
                     if (t && t.owner === 'player' && t.currentHP < t.hp) {
                         const healAmount = 12;
                         t.currentHP = Math.min(t.hp, t.currentHP + healAmount);
-                        showHeal(t.row, t.col, healAmount);
+                        showFloatingText(t.row, t.col, `+${healAmount}`, '#22c55e');
                         updateUnitDisplay(t);
                     }
                 }
@@ -436,8 +447,9 @@ function processThorns(unit) {
         if (target && target.owner !== unit.owner && target.currentHP > 0) {
             const dmg = 4;
             target.currentHP -= dmg;
-            showDamage(target.row, target.col, dmg);
             damaged++;
+
+            showFloatingText(target.row, target.col, `-${dmg}`, '#ef4444');
             updateUnitDisplay(target);
 
             if (target.currentHP <= 0) {
@@ -510,7 +522,7 @@ function initGame() {
     setInterval(gameLoop, 750);
 
     addLog('v0.8 已加载');
-    addLog('已添加小型浮动战斗文字');
+    addLog('小型浮动战斗文字已添加');
 }
 
 let cardCooldowns = {};

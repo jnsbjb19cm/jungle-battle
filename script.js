@@ -1,5 +1,5 @@
-// 丛林保卫战 v0.8
-// 添加小型浮动战斗文字（伤害/治疗数字）
+// 丛林保卫战 v0.10
+// 敵人生成间隔调整为15秒
 
 let sunlight = 5;
 let food = 5;
@@ -36,7 +36,6 @@ function showFloatingText(row, col, text, color = '#ef4444') {
 
     cell.appendChild(floatDiv);
 
-    // 向上飘 + 渐变
     requestAnimationFrame(() => {
         floatDiv.style.transform = 'translate(-50%, -22px)';
         floatDiv.style.opacity = '0';
@@ -335,7 +334,9 @@ function processSpecialAbilities() {
 function spawnEnemyWave() {
     if (!gameRunning) return;
     const now = Date.now();
-    if (now - lastSpawnTime < 4200) return;
+
+    // 改为 15 秒一波
+    if (now - lastSpawnTime < 15000) return;
 
     let spawned = 0;
     for (let row = 0; row < 5 && spawned < 2; row++) {
@@ -521,8 +522,8 @@ function initGame() {
 
     setInterval(gameLoop, 750);
 
-    addLog('v0.8 已加载');
-    addLog('小型浮动战斗文字已添加');
+    addLog('v0.10 已加载');
+    addLog('敌人生成间隔已调为 15 秒');
 }
 
 let cardCooldowns = {};

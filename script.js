@@ -1,5 +1,21 @@
-// 丛林保卫战 v0.7
-// 冰块冷莹机完整特殊效果（多目标 + 减速 + 冰封）
+// 丛林保卫战 v0.8
+// 添加小型浮动战斗文字（伤害/治疗数字）
+
+function showFloatingText(row, col, value, isHeal = false) {
+    const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+    if (!cell) return;
+
+    const text = document.createElement('div');
+    text.className = `floating-text ${isHeal ? 'heal' : 'damage'}`;
+    text.textContent = isHeal ? `+${value}` : `-${value}`;
+
+    cell.appendChild(text);
+
+    // 动画结束后移除
+    setTimeout(() => {
+        if (text.parentNode) text.parentNode.removeChild(text);
+    }, 650);
+}
 
 let sunlight = 5;
 let food = 5;
@@ -74,7 +90,6 @@ function updateUnitDisplay(unit) {
     if (unit.special === 'knockback') extra = '<br><small style="color:#f59e0b">击退</small>';
     if (unit.special === 'ice') extra = '<br><small style="color:#67e8f9">冰控</small>';
 
-    // 状态显示
     let statusText = '';
     const now = Date.now();
     if (unit.freezeUntil && unit.freezeUntil > now) {
@@ -109,7 +124,6 @@ function placeCard(row, col, cellElement) {
         row, col,
         currentHP: cardData.hp,
         lastActionTime: Date.now(),
-        // debuff
         slowUntil: 0,
         freezeUntil: 0,
         freezeImmuneUntil: 0
@@ -146,6 +160,15 @@ function addLog(msg) {
     logContent.scrollTop = logContent.scrollHeight;
 }
 
+// 显示浮动文字
+function showDamage(row, col, amount) {
+    showFloatingText(row, col, amount, false);
+}
+
+function showHeal(row, col, amount) {
+    showFloatingText(row, col, amount, true);
+}
+
 // 冰块冷莹机完整特殊效果
 function processIceSpecial(unit) {
     if (unit.special !== 'ice' || unit.currentHP <= 0) return;
@@ -159,7 +182,6 @@ function processIceSpecial(unit) {
 
     if (enemies.length === 0) return;
 
-    // 随机选择最多 8 个目标
     const shuffled = [...enemies].sort(() => Math.random() - 0.5);
     const targets = shuffled.slice(0, Math.min(8, shuffled.length));
 
@@ -168,35 +190,27 @@ function processIceSpecial(unit) {
     targets.forEach(target => {
         if (target.currentHP <= 0) return;
 
-        // 伤害计算
         let dmg = unit.attack;
-        // 假设远程单位伤害减半（简化处理）
         if (target.range && target.range >= 2) dmg = Math.floor(dmg * 0.5);
 
         target.currentHP -= dmg;
         hitCount++;
 
+        showDamage(target.row, target.col, dmg);
         updateUnitDisplay(target);
 
-        // 减速 / 冰封逻辑
         const isFrozen = target.freezeUntil && target.freezeUntil > now;
         const isSlowed = target.slowUntil && target.slowUntil > now;
 
-        if (isFrozen) {
-            // 已冰封中不再处理
-        } else if (isSlowed) {
-            // 已减速 → 转冰封
-            if (!target.freezeImmuneUntil || target.freezeImmuneUntil < now) {
-                target.freezeUntil = now + 1000; // 冰封 1 秒
-                target.freezeImmuneUntil = now + 3000; // 冰封后免疫 2 秒
-                addLog(`${target.name} 被冰封了`);
-            }
-        } else {
-            // 普通状态 → 50%减速
+        if (!isFrozen && !isSlowed) {
             if (Math.random() < 0.5) {
-                target.slowUntil = now + 1500; // 减速 1.5 秒
+                target.slowUntil = now + 1500;
                 addLog(`${target.name} 被减速了`);
             }
+        } else if (isSlowed && (!target.freezeImmuneUntil || target.freezeImmuneUntil < now)) {
+            target.freezeUntil = now + 1000;
+            target.freezeImmuneUntil = now + 3000;
+            addLog(`${target.name} 被冰封了`);
         }
 
         if (target.currentHP <= 0) {
@@ -216,6 +230,8 @@ function performAttack(attacker, target) {
     const damage = attacker.attack;
     target.currentHP -= damage;
 
+    showDamage(target.row, target.col, damage);
+
     const cell = document.querySelector(`.cell[data-row="${attacker.row}"][data-col="${attacker.col}"]`);
     if (cell) {
         const unitEl = cell.querySelector('.unit');
@@ -228,7 +244,6 @@ function performAttack(attacker, target) {
     addLog(`${attacker.name} 攻击了 ${target.name} (-${damage})`);
     updateUnitDisplay(target);
 
-    // 狂暴野猪 击退
     if (attacker.special === 'knockback') {
         tryKnockback(attacker, target);
     }
@@ -249,7 +264,7 @@ function removeUnit(unit) {
 function tryMove(unit) {
     const now = Date.now();
     if (!unit.canMove || unit.currentHP <= 0) return;
-    if (unit.freezeUntil && unit.freezeUntil > now) return; // 冰封中不能移动
+    if (unit.freezeUntil && unit.freezeUntil > now) return;
 
     const direction = unit.owner === 'player' ? 1 : -1;
     const nextCol = unit.col + direction;
@@ -283,7 +298,6 @@ function processSpecialAbilities() {
     units.forEach(unit => {
         if (!unit || unit.currentHP <= 0) return;
 
-        // 蒲公英医生 治疗
         if (unit.special === 'heal' && unit.owner === 'player' && specialTick % 3 === 0) {
             for (let r = -1; r <= 1; r++) {
                 for (let c = -1; c <= 1; c++) {
@@ -292,14 +306,15 @@ function processSpecialAbilities() {
                     if (tr<0||tr>=5||tc<0||tc>=12) continue;
                     const t = grid[tr] && grid[tr][tc];
                     if (t && t.owner === 'player' && t.currentHP < t.hp) {
-                        t.currentHP = Math.min(t.hp, t.currentHP + 12);
+                        const healAmount = 12;
+                        t.currentHP = Math.min(t.hp, t.currentHP + healAmount);
+                        showHeal(t.row, t.col, healAmount);
                         updateUnitDisplay(t);
                     }
                 }
             }
         }
 
-        // 尖刺藤蔓
         if (unit.special === 'thorns' && specialTick % 2 === 0) {
             processThorns(unit);
         }
@@ -364,7 +379,6 @@ function gameLoop() {
         const u = units[i];
         if (!u || u.currentHP <= 0) continue;
 
-        // 冰封中不能行动
         if (u.freezeUntil && u.freezeUntil > now) {
             continue;
         }
@@ -420,9 +434,12 @@ function processThorns(unit) {
 
         const target = grid[tr] && grid[tr][tc];
         if (target && target.owner !== unit.owner && target.currentHP > 0) {
-            target.currentHP -= 4;
+            const dmg = 4;
+            target.currentHP -= dmg;
+            showDamage(target.row, target.col, dmg);
             damaged++;
             updateUnitDisplay(target);
+
             if (target.currentHP <= 0) {
                 removeUnit(target);
                 addLog(`${target.name} 被荆棓杀死`);
@@ -492,8 +509,8 @@ function initGame() {
 
     setInterval(gameLoop, 750);
 
-    addLog('v0.7 已加载');
-    addLog('冰块冷莹机已完整减速/冰封系统');
+    addLog('v0.8 已加载');
+    addLog('已添加小型浮动战斗文字');
 }
 
 let cardCooldowns = {};

@@ -1,62 +1,26 @@
-// 丛林保卫战 - 单人对战核心 v0.4
-// 添加更多卡牌（仙人棕、菠萝骑士、蒲公英医生、冰块冷莹机） + 基础特殊能力支持
+// 丛林保卫战 v0.5
+// 改进攻击逻辑 + 冰块冷莹机特殊效果 + 更好的全屏适配布局
 
 let sunlight = 5;
 let food = 5;
 let playerBaseHP = 1000;
 let enemyBaseHP = 1000;
-let currentLevel = 1;
 let gameRunning = true;
 
 let selectedCard = null;
 let grid = [];
 let units = [];
 let lastSpawnTime = 0;
-let healTick = 0; // 用于蒲公英医生治疗计时
+let healTick = 0;
 
 const cardDatabase = {
-    // 白色
-    'flower-shooter': {
-        id: 'flower-shooter', name: '花生射手', type: 'plant',
-        cost: { sunlight: 6, food: 0 }, attack: 5, hp: 50, canMove: false, cooldown: 2200,
-        color: '#4ade80', range: 3, special: null
-    },
-    'walnut-guard': {
-        id: 'walnut-guard', name: '核桃卫兵', type: 'plant',
-        cost: { sunlight: 6, food: 0 }, attack: 0, hp: 200, canMove: false, cooldown: 5000,
-        color: '#854d0e', range: 0, special: null
-    },
-    'giant-monster': {
-        id: 'giant-monster', name: '巨头怪', type: 'monster',
-        cost: { sunlight: 0, food: 6 }, attack: 40, hp: 400, canMove: true, cooldown: 10000,
-        color: '#f87171', range: 1, special: null
-    },
-
-    // 绿色
-    'xianrenzhang': {
-        id: 'xianrenzhang', name: '仙人棕', type: 'plant',
-        cost: { sunlight: 7, food: 0 }, attack: 10, hp: 50, canMove: false, cooldown: 2800,
-        color: '#22c55e', range: 2, special: null
-    },
-    'boluo-qishi': {
-        id: 'boluo-qishi', name: '菠萝骑士', type: 'plant',
-        cost: { sunlight: 6, food: 0 }, attack: 30, hp: 400, canMove: true, cooldown: 8500,
-        color: '#eab308', range: 1, special: null
-    },
-
-    // 蓝色 - 治疗
-    'pugongying-yisheng': {
-        id: 'pugongying-yisheng', name: '蒲公英医生', type: 'plant',
-        cost: { sunlight: 10, food: 0 }, attack: 8, hp: 100, canMove: false, cooldown: 6000,
-        color: '#3b82f6', range: 0, special: 'heal'
-    },
-
-    // 红色 - 控制
-    'bingkuai-lengcui': {
-        id: 'bingkuai-lengcui', name: '冰块冷莹机', type: 'monster',
-        cost: { sunlight: 0, food: 5 }, attack: 12, hp: 60, canMove: false, cooldown: 3200,
-        color: '#67e8f9', range: 8, special: 'ice'
-    }
+    'flower-shooter': { id: 'flower-shooter', name: '花生射手', type: 'plant', cost: { sunlight: 6, food: 0 }, attack: 5, hp: 50, canMove: false, cooldown: 2200, color: '#4ade80', range: 3, special: null },
+    'walnut-guard':   { id: 'walnut-guard', name: '核桃卫兵', type: 'plant', cost: { sunlight: 6, food: 0 }, attack: 0, hp: 200, canMove: false, cooldown: 5000, color: '#854d0e', range: 0, special: null },
+    'giant-monster':  { id: 'giant-monster', name: '巨头怪', type: 'monster', cost: { sunlight: 0, food: 6 }, attack: 40, hp: 400, canMove: true, cooldown: 10000, color: '#f87171', range: 1, special: null },
+    'xianrenzhang':   { id: 'xianrenzhang', name: '仙人棕', type: 'plant', cost: { sunlight: 7, food: 0 }, attack: 10, hp: 50, canMove: false, cooldown: 2800, color: '#22c55e', range: 2, special: null },
+    'boluo-qishi':    { id: 'boluo-qishi', name: '菠萝骑士', type: 'plant', cost: { sunlight: 6, food: 0 }, attack: 30, hp: 400, canMove: true, cooldown: 8500, color: '#eab308', range: 1, special: null },
+    'pugongying-yisheng': { id: 'pugongying-yisheng', name: '蒲公英医生', type: 'plant', cost: { sunlight: 10, food: 0 }, attack: 8, hp: 100, canMove: false, cooldown: 6000, color: '#3b82f6', range: 0, special: 'heal' },
+    'bingkuai-lengcui': { id: 'bingkuai-lengcui', name: '冰块冷莹机', type: 'monster', cost: { sunlight: 0, food: 5 }, attack: 12, hp: 60, canMove: false, cooldown: 3200, color: '#67e8f9', range: 8, special: 'ice' }
 };
 
 let cardCooldowns = {};
@@ -65,11 +29,7 @@ function initHand() {
     const handContainer = document.getElementById('hand-cards');
     handContainer.innerHTML = '';
 
-    // 更多卡牌供测试
-    const initialCards = [
-        'flower-shooter', 'walnut-guard', 'giant-monster',
-        'xianrenzhang', 'boluo-qishi', 'pugongying-yisheng', 'bingkuai-lengcui'
-    ];
+    const initialCards = ['flower-shooter','walnut-guard','giant-monster','xianrenzhang','boluo-qishi','pugongying-yisheng','bingkuai-lengcui'];
     
     initialCards.forEach(cardId => {
         const cardData = cardDatabase[cardId];
@@ -77,11 +37,11 @@ function initHand() {
         cardEl.className = 'card';
         cardEl.dataset.cardId = cardId;
         cardEl.innerHTML = `
-            <div style="font-weight:bold; margin-bottom:4px; font-size:13px;">${cardData.name}</div>
-            <div style="font-size:11px; color:#cbd5e1; line-height:1.3;">
+            <div style="font-weight:700; margin-bottom:3px; font-size:13px;">${cardData.name}</div>
+            <div style="font-size:11px; color:#94a3b8; line-height:1.35;">
                 ${cardData.type === 'plant' ? '阳光' : '食物'}: ${cardData.cost.sunlight || cardData.cost.food}<br>
-                攻击: ${cardData.attack} | 血量: ${cardData.hp}<br>
-                ${cardData.special ? '<span style="color:#67e8f9">[特殊]</span>' : ''}
+                攻击 ${cardData.attack} | 血量 ${cardData.hp}
+                ${cardData.special ? '<br><span style="color:#67e8f9; font-weight:600;">[ 特殊 ]</span>' : ''}
             </div>
         `;
         cardEl.onclick = () => selectCard(cardId, cardEl);
@@ -117,44 +77,31 @@ function updateUnitDisplay(unit) {
     const hpPercent = Math.max(0, Math.min(100, (unit.currentHP / unit.hp) * 100));
     let extra = '';
     if (unit.special === 'heal') extra = '<br><small style="color:#67e8f9">治疗</small>';
-    if (unit.special === 'ice') extra = '<br><small style="color:#67e8f9">冰冻</small>';
+    if (unit.special === 'ice') extra = '<br><small style="color:#67e8f9">冰控</small>';
 
     unitEl.innerHTML = `
         ${unit.name}<br>
-        <small>HP: ${Math.max(0, Math.floor(unit.currentHP))}</small>
+        <small>HP ${Math.floor(unit.currentHP)}</small>
         ${extra}
-        <div class="hp-bar" style="width: ${hpPercent}%; background: ${unit.owner === 'player' ? '#4ade80' : '#f87171'};"></div>
+        <div class="hp-bar" style="width:${hpPercent}%;"></div>
     `;
     unitEl.style.background = unit.color;
 }
 
 function placeCard(row, col, cellElement) {
     if (!selectedCard || !gameRunning) return;
-
     const cardData = cardDatabase[selectedCard];
 
-    if (col >= 6) {
-        addLog('只能在左半场放置卡牌');
-        return;
-    }
-
-    if (isCellOccupied(row, col)) {
-        addLog('该格子已有单位');
-        return;
-    }
-
-    if ((cardData.cost.sunlight || 0) > sunlight || (cardData.cost.food || 0) > food) {
-        addLog('资源不足');
-        return;
-    }
+    if (col >= 6) { addLog('只能在左半场放置'); return; }
+    if (isCellOccupied(row, col)) { addLog('该格子已有单位'); return; }
+    if ((cardData.cost.sunlight||0) > sunlight || (cardData.cost.food||0) > food) { addLog('资源不足'); return; }
 
     const unit = {
         id: Date.now() + Math.random(),
         cardId: selectedCard,
         owner: 'player',
         ...cardData,
-        row: row,
-        col: col,
+        row, col,
         currentHP: cardData.hp,
         lastActionTime: Date.now()
     };
@@ -168,7 +115,6 @@ function placeCard(row, col, cellElement) {
     updateUnitDisplay(unit);
 
     cardCooldowns[selectedCard] = Date.now() + (cardData.cooldown || 3000);
-
     addLog(`放置了 ${cardData.name}`);
 
     document.querySelectorAll('.card').forEach(el => el.classList.remove('selected'));
@@ -187,11 +133,77 @@ function addLog(msg) {
     const p = document.createElement('p');
     p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
     logContent.appendChild(p);
-    if (logContent.children.length > 14) logContent.removeChild(logContent.children[0]);
+    if (logContent.children.length > 16) logContent.removeChild(logContent.children[0]);
     logContent.scrollTop = logContent.scrollHeight;
 }
 
-// 找目标
+// 攻击逻辑 - 增强可见度
+function performAttack(attacker, target) {
+    if (!attacker || !target || attacker.currentHP <= 0 || target.currentHP <= 0) return;
+
+    const damage = attacker.attack;
+    target.currentHP -= damage;
+
+    // 攻击闪光效果
+    const cell = document.querySelector(`.cell[data-row="${attacker.row}"][data-col="${attacker.col}"]`);
+    if (cell) {
+        const unitEl = cell.querySelector('.unit');
+        if (unitEl) {
+            unitEl.classList.add('attacking');
+            setTimeout(() => unitEl.classList.remove('attacking'), 280);
+        }
+    }
+
+    addLog(`${attacker.name} 攻击了 ${target.name} (-${damage})`);
+    updateUnitDisplay(target);
+
+    if (target.currentHP <= 0) {
+        removeUnit(target);
+        addLog(`${target.name} 死亡`);
+    }
+}
+
+// 冰块冷莹机 特殊效果：随机多目标攻击
+function processIceSpecial(unit) {
+    if (unit.special !== 'ice' || unit.currentHP <= 0) return;
+
+    const enemies = units.filter(u => u.owner !== unit.owner && u.currentHP > 0);
+    if (enemies.length === 0) return;
+
+    // 随机选择最多 6 个目标进行攻击
+    const targets = [];
+    const shuffled = [...enemies].sort(() => Math.random() - 0.5);
+    for (let i = 0; i < Math.min(6, shuffled.length); i++) {
+        targets.push(shuffled[i]);
+    }
+
+    let hitCount = 0;
+    targets.forEach(target => {
+        if (target.currentHP > 0) {
+            const dmg = Math.floor(unit.attack * (0.7 + Math.random() * 0.6)); // 70%~130%
+            target.currentHP -= dmg;
+            hitCount++;
+
+            const cell = document.querySelector(`.cell[data-row="${unit.row}"][data-col="${unit.col}"]`);
+            if (cell) {
+                const el = cell.querySelector('.unit');
+                if (el) { el.classList.add('attacking'); setTimeout(() => el.classList.remove('attacking'), 300); }
+            }
+
+            updateUnitDisplay(target);
+
+            if (target.currentHP <= 0) {
+                removeUnit(target);
+                addLog(`${target.name} 被冰块冷莹机击败`);
+            }
+        }
+    });
+
+    if (hitCount > 0) {
+        addLog(`${unit.name} 随机攻击了 ${hitCount} 个目标`);
+    }
+}
+
 function findTarget(unit) {
     const direction = unit.owner === 'player' ? 1 : -1;
     const maxRange = unit.range || 1;
@@ -213,31 +225,13 @@ function findTarget(unit) {
     return null;
 }
 
-function performAttack(attacker, target) {
-    if (!attacker || !target || attacker.currentHP <= 0 || target.currentHP <= 0) return;
-
-    const damage = attacker.attack;
-    target.currentHP -= damage;
-
-    addLog(`${attacker.name} 攻击了 ${target.name} (伤害${damage})`);
-
-    updateUnitDisplay(target);
-
-    if (target.currentHP <= 0) {
-        removeUnit(target);
-        addLog(`${target.name} 死亡了`);
-    }
-}
-
 function removeUnit(unit) {
     const cell = document.querySelector(`.cell[data-row="${unit.row}"][data-col="${unit.col}"]`);
     if (cell) cell.innerHTML = '';
-
     grid[unit.row][unit.col] = null;
     units = units.filter(u => u.id !== unit.id);
 }
 
-// 移动
 function tryMove(unit) {
     if (!unit.canMove || unit.currentHP <= 0) return;
 
@@ -247,7 +241,6 @@ function tryMove(unit) {
     if (nextCol < 0 || nextCol >= 12) {
         if (unit.owner === 'player') enemyBaseHP -= Math.max(8, unit.attack);
         else playerBaseHP -= Math.max(8, unit.attack);
-
         updateResources();
         removeUnit(unit);
         addLog(`${unit.name} 攻击了基地`);
@@ -266,60 +259,43 @@ function tryMove(unit) {
     }
 }
 
-// 蒲公英医生 治疗逻辑 (每 2.4秒 治疗附近我方单位)
 function processSpecialAbilities() {
     healTick++;
-    if (healTick % 3 !== 0) return; // 每 2.4 秒执行一次
-
-    units.forEach(unit => {
-        if (unit.special === 'heal' && unit.owner === 'player' && unit.currentHP > 0) {
-            // 治疗周围3x3范围内的我方单位
-            for (let r = -1; r <= 1; r++) {
-                for (let c = -1; c <= 1; c++) {
-                    const tr = unit.row + r;
-                    const tc = unit.col + c;
-                    if (tr < 0 || tr >= 5 || tc < 0 || tc >= 12) continue;
-
-                    const targetUnit = grid[tr] && grid[tr][tc];
-                    if (targetUnit && targetUnit.owner === 'player' && targetUnit.currentHP < targetUnit.hp) {
-                        targetUnit.currentHP = Math.min(targetUnit.hp, targetUnit.currentHP + 12);
-                        updateUnitDisplay(targetUnit);
-                        addLog(`${unit.name} 治疗了 ${targetUnit.name}`);
+    if (healTick % 3 === 0) {
+        // 蒲公英医生 治疗
+        units.forEach(u => {
+            if (u.special === 'heal' && u.owner === 'player' && u.currentHP > 0) {
+                for (let r = -1; r <= 1; r++) {
+                    for (let c = -1; c <= 1; c++) {
+                        const tr = u.row + r, tc = u.col + c;
+                        if (tr<0||tr>=5||tc<0||tc>=12) continue;
+                        const t = grid[tr] && grid[tr][tc];
+                        if (t && t.owner === 'player' && t.currentHP < t.hp) {
+                            t.currentHP = Math.min(t.hp, t.currentHP + 12);
+                            updateUnitDisplay(t);
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 }
 
-// 敌人AI波次
 function spawnEnemyWave() {
     if (!gameRunning) return;
-
     const now = Date.now();
     if (now - lastSpawnTime < 4200) return;
 
     let spawned = 0;
-    for (let row = 0; row < 5; row++) {
-        if (spawned >= 2) break;
-
+    for (let row = 0; row < 5 && spawned < 2; row++) {
         for (let col = 8; col < 11; col++) {
             if (!isCellOccupied(row, col)) {
-                const monster = {
-                    id: Date.now() + Math.random(),
-                    cardId: 'giant-monster',
-                    owner: 'enemy',
-                    ...cardDatabase['giant-monster'],
-                    row: row,
-                    col: col,
-                    currentHP: cardDatabase['giant-monster'].hp,
-                    lastActionTime: now
-                };
-                grid[row][col] = monster;
-                units.push(monster);
-                updateUnitDisplay(monster);
+                const m = { id: Date.now()+Math.random(), cardId:'giant-monster', owner:'enemy', ...cardDatabase['giant-monster'], row, col, currentHP: cardDatabase['giant-monster'].hp, lastActionTime: now };
+                grid[row][col] = m;
+                units.push(m);
+                updateUnitDisplay(m);
                 spawned++;
-                addLog('敌人生成了 巨头怪');
+                addLog('敌人生成 巨头怪');
                 break;
             }
         }
@@ -328,34 +304,31 @@ function spawnEnemyWave() {
 }
 
 function checkWinCondition() {
-    if (playerBaseHP <= 0) {
-        gameRunning = false;
-        addLog('=== 你输了！基地被破坏 ===');
-        setTimeout(() => alert('游戏结束 - 你输了'), 80);
-    }
-    if (enemyBaseHP <= 0) {
-        gameRunning = false;
-        addLog('=== 你赢了！敌人基地被破坏 ===');
-        setTimeout(() => alert('游戏结束 - 你赢了！'), 80);
-    }
+    if (playerBaseHP <= 0) { gameRunning = false; addLog('=== 你输了 ==='); setTimeout(()=>alert('游戏结束 - 你输了'),80); }
+    if (enemyBaseHP <= 0) { gameRunning = false; addLog('=== 你赢了 ==='); setTimeout(()=>alert('游戏结束 - 你赢了'),80); }
 }
 
-// 核心游戏循环
 function gameLoop() {
     if (!gameRunning) return;
 
     spawnEnemyWave();
     processSpecialAbilities();
 
-    for (let i = units.length - 1; i >= 0; i--) {
-        const unit = units[i];
-        if (!unit || unit.currentHP <= 0) continue;
+    for (let i = units.length-1; i>=0; i--) {
+        const u = units[i];
+        if (!u || u.currentHP <= 0) continue;
 
-        const target = findTarget(unit);
+        // 冰块冷莹机 特殊处理
+        if (u.special === 'ice') {
+            processIceSpecial(u);
+            continue; // 冰控不走普通攻击逻辑
+        }
+
+        const target = findTarget(u);
         if (target) {
-            performAttack(unit, target);
-        } else if (unit.canMove) {
-            tryMove(unit);
+            performAttack(u, target);
+        } else if (u.canMove) {
+            tryMove(u);
         }
     }
 
@@ -363,25 +336,22 @@ function gameLoop() {
     checkWinCondition();
 }
 
-// 初始化格子
 function initGrid() {
-    const battlefield = document.getElementById('battlefield');
-    battlefield.innerHTML = '';
+    const bf = document.getElementById('battlefield');
+    bf.innerHTML = '';
     grid = [];
 
-    for (let row = 0; row < 5; row++) {
+    for (let row=0; row<5; row++) {
         grid[row] = [];
-        for (let col = 0; col < 12; col++) {
+        for (let col=0; col<12; col++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
             cell.dataset.row = row;
             cell.dataset.col = col;
-
             if (col < 6) cell.classList.add('player-side');
             else cell.classList.add('enemy-side');
-
             cell.onclick = () => placeCard(row, col, cell);
-            battlefield.appendChild(cell);
+            bf.appendChild(cell);
             grid[row][col] = null;
         }
     }
@@ -399,10 +369,10 @@ function initGame() {
         updateResources();
     }, 2000);
 
-    setInterval(gameLoop, 800);
+    setInterval(gameLoop, 750);
 
-    addLog('游戏已加载 v0.4 - 卡牌库已扩展');
-    addLog('新增：仙人棕、菠萝骑士、蒲公英医生、冰块冷莹机');
+    addLog('v0.5 已加载');
+    addLog('冰块冷莹机已实现随机多目标攻击');
 }
 
 document.getElementById('reset-btn').onclick = () => location.reload();

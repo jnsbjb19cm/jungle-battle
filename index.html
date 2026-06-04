@@ -8,7 +8,6 @@
 </head>
 <body>
     <div class="game-container">
-        <!-- 顶部信息栏 -->
         <div class="top-bar">
             <div class="level-info">
                 <span>第 <span id="level-number">1</span> 关</span>
@@ -30,27 +29,22 @@
             </div>
         </div>
 
-        <!-- 卡牌手牌区 -->
         <div class="hand-area">
-            <h3>卡牌手牌 (6张)</h3>
-            <div class="hand-cards" id="hand-cards">
-                <!-- JS 动态生成 -->
-            </div>
+            <h3>卡牌手牌</h3>
+            <div class="hand-cards" id="hand-cards"></div>
         </div>
 
-        <!-- 战场区域 -->
-        <div class="battlefield-container">
-            <div class="battlefield-label left">我方区域</div>
-            <div class="battlefield-label right">敌方区域</div>
-            
-            <div class="battlefield" id="battlefield">
-                <!-- 5行12列格子由JS生成 -->
+        <div class="battlefield-wrapper">
+            <div class="battlefield-labels">
+                <div class="battlefield-label left">我方区域</div>
+                <div class="battlefield-label right">敌方区域</div>
             </div>
+            <div class="battlefield" id="battlefield"></div>
         </div>
 
         <div class="controls">
-            <button id="start-wave-btn">开始波次</button>
-            <button id="reset-btn">重置游戏</button>
+            <button id="start-wave-btn">触发波次</button>
+            <button id="reset-btn" class="danger">重置游戏</button>
         </div>
 
         <div class="log" id="log">

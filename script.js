@@ -1,74 +1,50 @@
-// v0.22 - Fixed names and placement
+// v0.23 - Selection screen fix
 
-let sunlight = 5;
-let food = 5;
-let playerBaseHP = 1000;
-let enemyBaseHP = 1000;
-let gameRunning = true;
+let selectedCards = [];
+const MAX_CARDS = 6;
+let currentFilter = 'all';
 
-let selectedCard = null;
-let grid = [];
-let units = [];
-let lastSpawnTime = 0;
-let specialTick = 0;
+// ... (keep previous working functions, ensure renderModalCards and toggle work) ...
 
-// ... (rest of the code from previous version, with placement fix) ... 
+// Make sure these functions exist and are correct:
 
-function placeCard(row, col, cellElement) {
-    if (!selectedCard || !gameRunning) return;
-    const cardData = cardDatabase[selectedCard];
+function renderModalCards() {
+    const grid = document.getElementById('modal-card-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
 
-    // Rule 1: Only in player side (left 6 columns)
-    if (col >= 6) {
-        addLog('只能在我方区域放置');
-        return;
-    }
+    Object.keys(cardDatabase).forEach(cardId => {
+        const cardData = cardDatabase[cardId];
+        if (currentFilter === 'plant' && cardData.type !== 'plant') return;
+        if (currentFilter === 'monster' && cardData.type !== 'monster') return;
 
-    // Rule 2: Movable units only in back 3 columns
-    if (cardData.canMove && col < 3) {
-        addLog('可移动单位只能放在后三列');
-        return;
-    }
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card';
+        if (selectedCards.includes(cardId)) cardEl.classList.add('selected');
 
-    // Rule 3: Movable units can stack, Immovable cannot
-    if (!cardData.canMove && isCellOccupiedByPlayer(row, col)) {
-        addLog('该格子已有我方单位');
-        return;
-    }
-
-    if ((cardData.cost.sunlight || 0) > sunlight || (cardData.cost.food || 0) > food) {
-        addLog('资源不足');
-        return;
-    }
-
-    const unit = {
-        id: Date.now() + Math.random(),
-        cardId: selectedCard,
-        owner: 'player',
-        ...cardData,
-        row, col,
-        currentHP: cardData.hp,
-        lastActionTime: Date.now()
-    };
-
-    sunlight -= cardData.cost.sunlight || 0;
-    food -= cardData.cost.food || 0;
-    updateResources();
-
-    grid[row][col] = unit;
-    units.push(unit);
-    updateUnitDisplay(unit);
-
-    cardCooldowns[selectedCard] = Date.now() + (cardData.cooldown || 3000);
-    addLog(`放置了 ${cardData.name}`);
-
-    document.querySelectorAll('.card').forEach(el => el.classList.remove('selected'));
-    selectedCard = null;
+        cardEl.innerHTML = `
+            <div style="font-weight:700; margin-bottom:4px;">${cardData.name}</div>
+            <div style="font-size:12px; color:#94a3b8;">
+                ${cardData.type === 'plant' ? '阳光' : '食物'}: ${cardData.cost.sunlight || cardData.cost.food}<br>
+                攻击 ${cardData.attack} | 血量 ${cardData.hp}
+            </div>
+        `;
+        cardEl.onclick = () => toggleCardSelection(cardId, cardEl);
+        grid.appendChild(cardEl);
+    });
 }
 
-function isCellOccupiedByPlayer(row, col) {
-    const u = grid[row] && grid[row][col];
-    return u && u.owner === 'player';
+function toggleCardSelection(cardId, cardElement) {
+    const index = selectedCards.indexOf(cardId);
+    if (index > -1) {
+        selectedCards.splice(index, 1);
+        cardElement.classList.remove('selected');
+    } else {
+        if (selectedCards.length >= MAX_CARDS) { alert('最多选6张'); return; }
+        selectedCards.push(cardId);
+        cardElement.classList.add('selected');
+    }
 }
 
-// ... other functions remain the same ...
+// Ensure openEditModal calls renderModalCards()
+// ... rest of selection logic ...

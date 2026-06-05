@@ -1,68 +1,179 @@
-// v0.19 - Exact placement rules as per user spec
+// v0.21 - Working card selection + better visuals
 
-function placeCard(row, col, cellElement) {
-    if (!selectedCard || !gameRunning) return;
-    const cardData = cardDatabase[selectedCard];
+let selectedCards = [];
+const MAX_CARDS = 6;
+let currentFilter = 'all';
 
-    // 规则1: 只能放在我方区域 (左6列)
-    if (col >= 6) {
-        addLog('只能在我方区域放置');
+// 初始化选卡界面
+function initSelectionScreen() {
+    renderTeamPreview();
+    updateTeamCount();
+
+    document.getElementById('edit-team-btn').onclick = openEditModal;
+    document.getElementById('start-battle-btn').onclick = startBattle;
+}
+
+function renderTeamPreview() {
+    const container = document.getElementById('team-preview');
+    container.innerHTML = '';
+
+    if (selectedCards.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:#64748b; padding:20px;';
+        empty.innerHTML = '请点击编辑战团选择卡牌';
+        container.appendChild(empty);
         return;
     }
 
-    // 规则2: 可移动单位只能放在后三列 (col 3,4,5)
-    if (cardData.canMove) {
-        if (col < 3) {
-            addLog('可移动单位只能放置在靠近基地的三列');
-            return;
-        }
-    }
-    // 不可移动单位可以在左6列任意位置
+    selectedCards.forEach(cardId => {
+        const cardData = cardDatabase[cardId];
+        if (!cardData) return;
 
-    // 规则3: 可移动单位无视格子占用（可放在任何单位上）
-    // 不可移动单位需要检查是否被我方单位占用
-    if (!cardData.canMove) {
-        if (isCellOccupiedByPlayer(row, col)) {
-            addLog('该格子已有我方单位，无法放置');
-            return;
-        }
-    }
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card';
+        cardEl.innerHTML = `
+            <div style="font-weight:700; font-size:13px; margin-bottom:4px;">${cardData.name}</div>
+            <div style="font-size:11px; color:#94a3b8;">
+                ${cardData.type === 'plant' ? '阳光' : '食物'}: ${cardData.cost.sunlight || cardData.cost.food}
+            </div>
+        `;
+        container.appendChild(cardEl);
+    });
+}
 
-    // 资源检查
-    if ((cardData.cost.sunlight||0) > sunlight || (cardData.cost.food||0) > food) {
-        addLog('资源不足');
-        return;
-    }
+function updateTeamCount() {
+    document.getElementById('team-count').textContent = selectedCards.length;
+    const startBtn = document.getElementById('start-battle-btn');
+    startBtn.disabled = selectedCards.length !== MAX_CARDS;
+}
 
-    const unit = {
-        id: Date.now() + Math.random(),
-        cardId: selectedCard,
-        owner: 'player',
-        ...cardData,
-        row, col,
-        currentHP: cardData.hp,
-        lastActionTime: Date.now(),
-        slowUntil: 0,
-        freezeUntil: 0,
-        freezeImmuneUntil: 0
+// 打开编辑弹窗
+function openEditModal() {
+    const modal = document.getElementById('edit-modal');
+    modal.style.display = 'block';
+    currentFilter = 'all';
+    renderModalCards();
+
+    // Tab 切换
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.onclick = () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentFilter = tab.dataset.filter;
+            renderModalCards();
+        };
+    });
+
+    document.getElementById('close-modal-btn').onclick = closeEditModal;
+    document.getElementById('confirm-btn').onclick = () => {
+        closeEditModal();
+        renderTeamPreview();
+        updateTeamCount();
     };
+}
 
-    sunlight -= cardData.cost.sunlight || 0;
-    food -= cardData.cost.food || 0;
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+}
+
+function renderModalCards() {
+    const grid = document.getElementById('modal-card-grid');
+    grid.innerHTML = '';
+
+    Object.keys(cardDatabase).forEach(cardId => {
+        const cardData = cardDatabase[cardId];
+
+        if (currentFilter === 'plant' && cardData.type !== 'plant') return;
+        if (currentFilter === 'monster' && cardData.type !== 'monster') return;
+
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card';
+        if (selectedCards.includes(cardId)) {
+            cardEl.classList.add('selected');
+        }
+
+        cardEl.innerHTML = `
+            <div style="font-weight:700; margin-bottom:4px;">${cardData.name}</div>
+            <div style="font-size:12px; color:#94a3b8;">
+                ${cardData.type === 'plant' ? '阳光' : '食物'}: ${cardData.cost.sunlight || cardData.cost.food}<br>
+                攻击 ${cardData.attack} | 血量 ${cardData.hp}
+            </div>
+        `;
+
+        cardEl.onclick = () => toggleCardSelection(cardId, cardEl);
+        grid.appendChild(cardEl);
+    });
+}
+
+function toggleCardSelection(cardId, cardElement) {
+    const index = selectedCards.indexOf(cardId);
+
+    if (index > -1) {
+        selectedCards.splice(index, 1);
+        cardElement.classList.remove('selected');
+    } else {
+        if (selectedCards.length >= MAX_CARDS) {
+            alert(`最多只能选 ${MAX_CARDS} 张卡牌`);
+            return;
+        }
+        selectedCards.push(cardId);
+        cardElement.classList.add('selected');
+    }
+
+    // 更新弹窗内数量显示
+    const countEl = document.getElementById('modal-count');
+    if (countEl) countEl.textContent = selectedCards.length;
+}
+
+// 开始战斗
+function startBattle() {
+    if (selectedCards.length !== MAX_CARDS) return;
+
+    document.getElementById('selection-screen').style.display = 'none';
+    document.getElementById('game-container').style.display = 'flex';
+
+    initGrid();
+    initBattleHand();
     updateResources();
 
-    grid[row][col] = unit;
-    units.push(unit);
-    updateUnitDisplay(unit);
+    setInterval(() => {
+        if (!gameRunning) return;
+        if (sunlight < 20) sunlight++;
+        if (food < 20) food++;
+        updateResources();
+    }, 2000);
 
-    cardCooldowns[selectedCard] = Date.now() + (cardData.cooldown || 3000);
-    addLog(`放置了 ${cardData.name}`);
+    setInterval(gameLoop, 750);
 
-    document.querySelectorAll('.card').forEach(el => el.classList.remove('selected'));
-    selectedCard = null;
+    addLog('战斗开始！');
 }
 
-function isCellOccupiedByPlayer(row, col) {
-    const cellUnit = grid[row] && grid[row][col];
-    return cellUnit && cellUnit.owner === 'player';
+function initBattleHand() {
+    const handContainer = document.getElementById('hand-cards');
+    handContainer.innerHTML = '';
+
+    selectedCards.forEach(cardId => {
+        const cardData = cardDatabase[cardId];
+        if (!cardData) return;
+
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card';
+        cardEl.dataset.cardId = cardId;
+        cardEl.innerHTML = `
+            <div style="font-weight:700; margin-bottom:3px; font-size:13px;">${cardData.name}</div>
+            <div style="font-size:11px; color:#94a3b8;">
+                ${cardData.type === 'plant' ? '阳光' : '食物'}: ${cardData.cost.sunlight || cardData.cost.food}<br>
+                攻击 ${cardData.attack} | 血量 ${cardData.hp}
+            </div>
+        `;
+        cardEl.onclick = () => selectCard(cardId, cardEl);
+        handContainer.appendChild(cardEl);
+    });
 }
+
+// 保留原有其他函数
+// initGrid, gameLoop, placeCard 等保持不变
+
+window.onload = function() {
+    initSelectionScreen();
+};

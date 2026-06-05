@@ -8,19 +8,49 @@
 </head>
 <body>
 
-    <!-- 选卡界面 -->
+    <!-- 选卡主界面 -->
     <div id="selection-screen">
-        <div class="selection-container">
-            <h1>选择卡牌 (6/6)</h1>
-            <div class="selected-count">
-                已选择: <span id="selected-count">0</span> / 6
+        <div class="selection-main">
+            <h1>我的战团</h1>
+
+            <!-- 当前战团预览 -->
+            <div class="team-preview">
+                <div class="team-cards" id="team-preview">
+                    <!-- JS 渲染已选卡牌 -->
+                </div>
+                <button id="edit-team-btn">编辑</button>
             </div>
 
-            <div class="card-grid" id="card-grid">
-                <!-- JS 动态渲染所有卡牌 -->
+            <div class="selected-info">
+                已选 <span id="team-count">0</span> / 6
             </div>
 
             <button id="start-battle-btn" disabled>开始战斗</button>
+        </div>
+    </div>
+
+    <!-- 编辑弹窗 -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>编辑战团</h2>
+                <button class="close-btn" id="close-modal-btn">&times;</button>
+            </div>
+
+            <!-- 分类Tab -->
+            <div class="tabs">
+                <button class="tab-btn active" data-filter="all">全部</button>
+                <button class="tab-btn" data-filter="plant">植物</button>
+                <button class="tab-btn" data-filter="monster">怪物</button>
+            </div>
+
+            <div class="modal-card-grid" id="modal-card-grid">
+                <!-- JS 动态渲染所有卡牌 -->
+            </div>
+
+            <div class="modal-footer">
+                <button id="confirm-edit-btn">确定</button>
+            </div>
         </div>
     </div>
 

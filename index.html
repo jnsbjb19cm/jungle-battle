@@ -7,63 +7,79 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 顶部资源 + 横向手牌栏 -->
-    <div class="top-bar">
-        <div class="resources">
-            <div class="resource sunlight">
-                <span class="icon">🌞</span>
-                <span id="sunlight">5</span>
-                <span class="max">/20</span>
-            </div>
-            <div class="resource food">
-                <span class="icon">🍖</span>
-                <span id="food">5</span>
-                <span class="max">/20</span>
-            </div>
-        </div>
 
-        <div class="hand-bar">
-            <div class="hand-cards" id="hand-cards"></div>
-        </div>
+    <!-- 选卡界面 -->
+    <div id="selection-screen">
+        <div class="selection-container">
+            <h1>选择卡牌 (6/6)</h1>
+            <div class="selected-count">
+                已选择: <span id="selected-count">0</span> / 6
+            </div>
 
-        <div class="base-hp">
-            <div class="hp-item player">
-                <span>我方</span>
-                <span id="player-base-hp">1000</span>
+            <div class="card-grid" id="card-grid">
+                <!-- JS 动态渲染所有卡牌 -->
             </div>
-            <div class="hp-item enemy">
-                <span>敌方</span>
-                <span id="enemy-base-hp">1000</span>
-            </div>
+
+            <button id="start-battle-btn" disabled>开始战斗</button>
         </div>
     </div>
 
-    <!-- 主要内容区域 -->
-    <div class="main-container">
-        <!-- 左侧装饰（可后续加角色） -->
-        <div class="side left-side">
-            <div class="side-decoration">
-                <div class="side-label">我方基地</div>
-            </div>
-        </div>
-
-        <!-- 中间战场 -->
-        <div class="battlefield-container">
-            <div class="battlefield" id="battlefield"></div>
-        </div>
-
-        <!-- 右侧日志 -->
-        <div class="side right-side">
-            <div class="log-container">
-                <div class="log-header">战斗日志</div>
-                <div class="log" id="log">
-                    <div id="log-content"></div>
+    <!-- 游戏主界面 -->
+    <div id="game-container" style="display: none;">
+        <!-- 顶部资源 + 横向手牌栏 -->
+        <div class="top-bar">
+            <div class="resources">
+                <div class="resource sunlight">
+                    <span class="icon">🌞</span>
+                    <span id="sunlight">5</span>
+                    <span class="max">/20</span>
+                </div>
+                <div class="resource food">
+                    <span class="icon">🍖</span>
+                    <span id="food">5</span>
+                    <span class="max">/20</span>
                 </div>
             </div>
 
-            <div class="controls">
-                <button id="start-wave-btn">触发波次</button>
-                <button id="reset-btn" class="danger">重置</button>
+            <div class="hand-bar">
+                <div class="hand-cards" id="hand-cards"></div>
+            </div>
+
+            <div class="base-hp">
+                <div class="hp-item player">
+                    <span>我方</span>
+                    <span id="player-base-hp">1000</span>
+                </div>
+                <div class="hp-item enemy">
+                    <span>敌方</span>
+                    <span id="enemy-base-hp">1000</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-container">
+            <div class="side left-side">
+                <div class="side-decoration">
+                    <div class="side-label">我方基地</div>
+                </div>
+            </div>
+
+            <div class="battlefield-container">
+                <div class="battlefield" id="battlefield"></div>
+            </div>
+
+            <div class="side right-side">
+                <div class="log-container">
+                    <div class="log-header">战斗日志</div>
+                    <div class="log" id="log">
+                        <div id="log-content"></div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="start-wave-btn">触发波次</button>
+                    <button id="reset-btn" class="danger">重置</button>
+                </div>
             </div>
         </div>
     </div>

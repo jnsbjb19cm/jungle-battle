@@ -8,37 +8,19 @@ body {
     overflow: hidden;
 }
 
-/* 选卡主界面 - 参考图风格 */
-#selection-screen {
+#selection-screen, #game-container {
     height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(180deg, #0f172a 0%, #1e2937 100%);
+    overflow: hidden;
 }
 
 .selection-container {
     width: 92%;
     max-width: 980px;
+    margin: 0 auto;
     text-align: center;
+    padding-top: 40px;
 }
 
-.selection-header {
-    margin-bottom: 20px;
-}
-
-.selection-header h1 {
-    font-size: 32px;
-    margin: 0 0 8px 0;
-    color: #e2e8f0;
-}
-
-.team-count {
-    font-size: 18px;
-    color: #94a3b8;
-}
-
-/* 战团预览 */
 .team-preview-section {
     display: flex;
     align-items: center;
@@ -59,11 +41,6 @@ body {
     border: 2px solid #334155;
 }
 
-.team-cards .card {
-    width: 90px;
-    height: 115px;
-}
-
 .edit-btn {
     padding: 14px 36px;
     font-size: 20px;
@@ -73,12 +50,6 @@ body {
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.2s;
-}
-
-.edit-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4);
 }
 
 .start-btn {
@@ -98,7 +69,6 @@ body {
     cursor: not-allowed;
 }
 
-/* 编辑弹窗 */
 .modal {
     display: none;
     position: fixed;
@@ -119,14 +89,6 @@ body {
     max-width: 1100px;
     max-height: 82vh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
 }
 
 .tabs {
@@ -187,9 +149,8 @@ body {
     cursor: pointer;
 }
 
-/* 游戏界面样式 */
+/* 游戏界面 */
 #game-container {
-    height: 100vh;
     display: flex;
     flex-direction: column;
 }
@@ -201,15 +162,86 @@ body {
     background: #1e2937;
     padding: 10px 20px;
     border-bottom: 3px solid #334155;
+    flex-shrink: 0;
+}
+
+.resources {
+    display: flex;
+    gap: 20px;
+}
+
+.resource {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.hand-bar {
+    flex: 1;
+    overflow-x: auto;
+}
+
+.hand-cards {
+    display: flex;
+    gap: 8px;
+}
+
+.main-container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.side {
+    width: 80px;
+    background: #1e2937;
+    flex-shrink: 0;
+}
+
+.battlefield-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: #14532d;
 }
 
 .battlefield {
     display: grid;
-    grid-template-columns: repeat(12, minmax(48px, 58px));
-    grid-template-rows: repeat(5, minmax(56px, 66px));
-    gap: 5px;
+    grid-template-columns: repeat(12, minmax(52px, 62px));
+    grid-template-rows: repeat(5, minmax(60px, 70px));
+    gap: 6px;
     background: #166534;
-    padding: 14px;
+    padding: 16px;
     border-radius: 16px;
     border: 5px solid #4ade80;
 }
+
+.log {
+    flex: 1;
+    background: #0f172a;
+    border-radius: 8px;
+    padding: 10px;
+    overflow-y: auto;
+    font-size: 13px;
+}
+
+.controls {
+    margin-top: 12px;
+}
+
+.controls button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 8px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+#start-wave-btn { background: #3b82f6; color: white; }
+#reset-btn { background: #ef4444; color: white; }

@@ -8,24 +8,19 @@
 </head>
 <body>
 
-    <!-- 选卡主界面 - 参考图风格 -->
+    <!-- 选卡界面 -->
     <div id="selection-screen">
         <div class="selection-container">
-            <!-- 顶部标题 -->
             <div class="selection-header">
                 <h1>我的战团</h1>
                 <div class="team-count">已选 <span id="team-count">0</span> / 6</div>
             </div>
 
-            <!-- 战团预览区域 -->
             <div class="team-preview-section">
-                <div class="team-cards" id="team-preview">
-                    <!-- JS 渲染已选卡牌 -->
-                </div>
+                <div class="team-cards" id="team-preview"></div>
                 <button id="edit-team-btn" class="edit-btn">编辑战团</button>
             </div>
 
-            <!-- 开始战斗按钮 -->
             <button id="start-battle-btn" class="start-btn" disabled>开始战斗</button>
         </div>
     </div>
@@ -38,19 +33,15 @@
                 <button class="close-btn" id="close-modal-btn">&times;</button>
             </div>
 
-            <!-- 分类Tab -->
             <div class="tabs">
                 <button class="tab active" data-filter="all">全部</button>
                 <button class="tab" data-filter="plant">植物</button>
                 <button class="tab" data-filter="monster">怪物</button>
             </div>
 
-            <div class="card-grid" id="modal-card-grid">
-                <!-- JS 渲染 -->
-            </div>
+            <div class="card-grid" id="modal-card-grid"></div>
 
             <div class="modal-footer">
-                <div class="modal-info">已选 <span id="modal-count">0</span> / 6</div>
                 <button id="confirm-btn" class="confirm-btn">确定</button>
             </div>
         </div>
@@ -58,7 +49,6 @@
 
     <!-- 游戏主界面 -->
     <div id="game-container" style="display: none;">
-        <!-- 顶部资源 + 手牌 -->
         <div class="top-bar">
             <div class="resources">
                 <div class="resource sunlight">

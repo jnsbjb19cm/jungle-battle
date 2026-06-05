@@ -1,5 +1,5 @@
-// 丛林保卫战 v0.10
-// 敵人生成间隔调整为15秒
+// 丛林保卫战 v0.11
+// 尖刺藤蔓血量280 + 平滑移动动画
 
 let sunlight = 5;
 let food = 5;
@@ -271,10 +271,9 @@ function removeUnit(unit) {
     units = units.filter(u => u.id !== unit.id);
 }
 
+// 平滑移动动画版
 function tryMove(unit) {
-    const now = Date.now();
     if (!unit.canMove || unit.currentHP <= 0) return;
-    if (unit.freezeUntil && unit.freezeUntil > now) return;
 
     const direction = unit.owner === 'player' ? 1 : -1;
     const nextCol = unit.col + direction;
@@ -289,15 +288,38 @@ function tryMove(unit) {
         return;
     }
 
-    if (!isCellOccupied(unit.row, nextCol)) {
-        const oldCell = document.querySelector(`.cell[data-row="${unit.row}"][data-col="${unit.col}"]`);
-        if (oldCell) oldCell.innerHTML = '';
+    if (isCellOccupied(unit.row, nextCol)) return;
 
+    const oldCell = document.querySelector(`.cell[data-row="${unit.row}"][data-col="${unit.col}"]`);
+    const newCell = document.querySelector(`.cell[data-row="${unit.row}"][data-col="${nextCol}"]`);
+
+    if (!oldCell || !newCell) return;
+
+    const unitEl = oldCell.querySelector('.unit');
+    if (!unitEl) return;
+
+    // 平滑动画
+    const oldRect = oldCell.getBoundingClientRect();
+    const newRect = newCell.getBoundingClientRect();
+    const deltaX = newRect.left - oldRect.left;
+
+    unitEl.style.transition = 'transform 0.3s ease';
+    unitEl.style.transform = `translateX(${deltaX}px)`;
+
+    setTimeout(() => {
+        unitEl.style.transition = 'none';
+        unitEl.style.transform = 'none';
+
+        oldCell.removeChild(unitEl);
+        newCell.appendChild(unitEl);
+
+        // 更新数据
         grid[unit.row][unit.col] = null;
         unit.col = nextCol;
         grid[unit.row][nextCol] = unit;
+
         updateUnitDisplay(unit);
-    }
+    }, 300);
 }
 
 function processSpecialAbilities() {
@@ -334,8 +356,6 @@ function processSpecialAbilities() {
 function spawnEnemyWave() {
     if (!gameRunning) return;
     const now = Date.now();
-
-    // 改为 15 秒一波
     if (now - lastSpawnTime < 15000) return;
 
     let spawned = 0;
@@ -522,8 +542,9 @@ function initGame() {
 
     setInterval(gameLoop, 750);
 
-    addLog('v0.10 已加载');
-    addLog('敌人生成间隔已调为 15 秒');
+    addLog('v0.11 已加载');
+    addLog('尖刺藤蔓血量已调为280');
+    addLog('移动已改为平滑动画');
 }
 
 let cardCooldowns = {};

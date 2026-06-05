@@ -16,7 +16,7 @@ const cardDatabase = {
     'pugongying-yisheng': { id: 'pugongying-yisheng', name: '蒲公英医生', type: 'plant', cost: { sunlight: 10, food: 0 }, attack: 8, hp: 100, canMove: false, cooldown: 6000, color: '#3b82f6', range: 0, special: 'heal' },
     'bingkuai-lengcui': { id: 'bingkuai-lengcui', name: '冰块冷莹机', type: 'monster', cost: { sunlight: 0, food: 5 }, attack: 12, hp: 60, canMove: false, cooldown: 3200, color: '#67e8f9', range: 8, special: 'ice' },
 
-    // 稻草人 - 正确版本
+    // 稻草人
     'scarecrow': { id: 'scarecrow', name: '稻草人', type: 'monster', cost: { sunlight: 0, food: 8 }, attack: 5, hp: 120, canMove: false, cooldown: 4500, color: '#854d0e', range: 0, special: 'aura_attack' },
 
     // 毒菇菇

@@ -1,5 +1,3 @@
-// 丛林保卫战 - 卡牌数据库
-
 const cardDatabase = {
     // 白色
     'flower-shooter': {
@@ -30,7 +28,7 @@ const cardDatabase = {
         color: '#eab308', range: 1, special: null
     },
 
-    // 新增
+    // 新增 - 绿色
     'thorn-vine': {
         id: 'thorn-vine', name: '尖刺藤蔓', type: 'plant',
         cost: { sunlight: 5, food: 0 }, attack: 6, hp: 280, canMove: false, cooldown: 3000,

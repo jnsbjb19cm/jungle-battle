@@ -18,7 +18,7 @@ const cardDatabase = {
 
     // 绿色
     'xianrenzhang': {
-        id: 'xianrenzhang', name: '仙人棕', type: 'plant',
+        id: 'xianrenzhang', name: '仙人掌', type: 'plant',
         cost: { sunlight: 7, food: 0 }, attack: 10, hp: 50, canMove: false, cooldown: 2800,
         color: '#22c55e', range: 2, special: null
     },
@@ -47,7 +47,7 @@ const cardDatabase = {
         color: '#3b82f6', range: 0, special: 'heal'
     },
     'bingkuai-lengcui': {
-        id: 'bingkuai-lengcui', name: '冰块冷莹机', type: 'monster',
+        id: 'bingkuai-lengcui', name: '冰块冷萃机', type: 'monster',
         cost: { sunlight: 0, food: 5 }, attack: 12, hp: 60, canMove: false, cooldown: 3200,
         color: '#67e8f9', range: 8, special: 'ice'
     },

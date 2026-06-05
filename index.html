@@ -3,63 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>丛林保卫战 - 单人对战核心</title>
+    <title>丛林保卫战</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 选卡界面 -->
-    <div id="selection-screen">
-        <div class="selection-container">
-            <div class="selection-header">
-                <h1>我的战团</h1>
-                <div class="team-count">已选 <span id="team-count">0</span> / 6</div>
-            </div>
-
-            <div class="team-preview-section">
-                <div class="team-cards" id="team-preview"></div>
-                <button id="edit-team-btn" class="edit-btn">编辑战团</button>
-            </div>
-
-            <button id="start-battle-btn" class="start-btn" disabled>开始战斗</button>
-        </div>
-    </div>
-
-    <!-- 编辑弹窗 -->
-    <div id="edit-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>选择卡牌</h2>
-                <button class="close-btn" id="close-modal-btn">&times;</button>
-            </div>
-
-            <div class="tabs">
-                <button class="tab active" data-filter="all">全部</button>
-                <button class="tab" data-filter="plant">植物</button>
-                <button class="tab" data-filter="monster">怪物</button>
-            </div>
-
-            <div class="card-grid" id="modal-card-grid"></div>
-
-            <div class="modal-footer">
-                <button id="confirm-btn" class="confirm-btn">确定</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 游戏主界面 -->
-    <div id="game-container" style="display: none;">
+    <div id="game-container">
         <div class="top-bar">
             <div class="resources">
                 <div class="resource sunlight">
-                    <span class="icon">🌞</span>
+                    <span>🌞</span>
                     <span id="sunlight">5</span>
-                    <span class="max">/20</span>
+                    <span>/20</span>
                 </div>
                 <div class="resource food">
-                    <span class="icon">🍖</span>
+                    <span>🍖</span>
                     <span id="food">5</span>
-                    <span class="max">/20</span>
+                    <span>/20</span>
                 </div>
             </div>
 
@@ -68,22 +28,14 @@
             </div>
 
             <div class="base-hp">
-                <div class="hp-item player">
-                    <span>我方</span>
-                    <span id="player-base-hp">1000</span>
-                </div>
-                <div class="hp-item enemy">
-                    <span>敌方</span>
-                    <span id="enemy-base-hp">1000</span>
-                </div>
+                <div>我方 <span id="player-base-hp">1000</span></div>
+                <div>敌方 <span id="enemy-base-hp">1000</span></div>
             </div>
         </div>
 
         <div class="main-container">
             <div class="side left-side">
-                <div class="side-decoration">
-                    <div class="side-label">我方基地</div>
-                </div>
+                <div class="side-label">我方基地</div>
             </div>
 
             <div class="battlefield-container">
@@ -93,14 +45,12 @@
             <div class="side right-side">
                 <div class="log-container">
                     <div class="log-header">战斗日志</div>
-                    <div class="log" id="log">
-                        <div id="log-content"></div>
-                    </div>
+                    <div class="log" id="log-content"></div>
                 </div>
 
                 <div class="controls">
-                    <button id="start-wave-btn">触发波次</button>
-                    <button id="reset-btn" class="danger">重置</button>
+                    <button onclick="startWave()">触发波次</button>
+                    <button onclick="resetGame()">重置</button>
                 </div>
             </div>
         </div>
